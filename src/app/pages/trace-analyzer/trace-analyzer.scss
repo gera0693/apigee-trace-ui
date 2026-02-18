@@ -90,3 +90,12 @@ mat-card {
   border-radius: 8px;
   font-size: 12px;
 }
+
+.metadata-grid .proxy-url a {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
+}

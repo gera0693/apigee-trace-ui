@@ -69,6 +69,7 @@ export class TraceAnalyzerComponent {
     const headersObj = req.headers || {};
     const headers = Object.keys(headersObj).map((k) => ({ name: k, value: String(headersObj[k]) }));
 
+    const m = apiData.metadata || {};
     // Si luego extendemos analyzer.py para incluir state changes/metadata,
     // solo actualizamos aquí la asignación real.
     const legacy: LegacyViewModel = {
@@ -78,13 +79,17 @@ export class TraceAnalyzerComponent {
         totalHeaders: headers.length,
         hasStateTransitions: false
       },
+      
       metadata: {
-        organization: '-',
-        environment: '-',
-        api: '-',
-        revision: '-',
-        sessionId: '-',
-        retrieved: '-'
+        organization: m.organization ?? '-',
+        environment:  m.environment ?? '-',
+        api:          m.api ?? '-',
+        revision:     m.revision ?? '-',
+        sessionId:    m.sessionId ?? '-',
+        retrieved:    m.retrieved ?? '-',
+        // NUEVO:
+        virtualhost:  m.virtualhost ?? '-',
+        proxyUrl:     m.proxyUrl ?? '-',
       },
       request: {
         uri: req.uri || 'Unknown',

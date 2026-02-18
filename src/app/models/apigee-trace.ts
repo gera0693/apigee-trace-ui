@@ -37,6 +37,20 @@ export interface AnalysisResponse {
   remediations?: string[];
   playbooks?: Array<{ title?: string; url?: string }>;
 
+  
+    metadata?: {
+        organization?: string;
+        environment?: string;
+        api?: string;
+        revision?: string;
+        sessionId?: string;
+        retrieved?: string;
+        // extras:
+        virtualhost?: string;
+        proxyUrl?: string;
+    };
+
+
   report_text?: string;
 }
 
@@ -54,7 +68,9 @@ export interface LegacyViewModel {
     api: string;
     revision: string;
     sessionId: string;
-    retrieved: string;
+    retrieved: string; 
+    virtualhost?: string;
+    proxyUrl?: string;
   };
   request: {
     uri: string;

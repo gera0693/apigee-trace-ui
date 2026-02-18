@@ -58,12 +58,20 @@
     <h3 class="section-title">Metadata</h3>
 
     <div class="metadata-grid">
-      <p><strong>Organization:</strong> {{ result()?.metadata?.organization }}</p>
+      
+<p><strong>Organization:</strong> {{ result()?.metadata?.organization }}</p>
       <p><strong>Environment:</strong> {{ result()?.metadata?.environment }}</p>
       <p><strong>API:</strong> {{ result()?.metadata?.api }}</p>
       <p><strong>Revision:</strong> {{ result()?.metadata?.revision }}</p>
       <p><strong>Session ID:</strong> {{ result()?.metadata?.sessionId }}</p>
       <p><strong>Retrieved:</strong> {{ result()?.metadata?.retrieved }}</p>
+      <p><strong>Virtual host:</strong> {{ result()?.metadata?.virtualhost }}</p>
+      <p class="proxy-url"><strong>Proxy URL:</strong> 
+        <a *ngIf="result()?.metadata?.proxyUrl as url" [href]="url" target="_blank" rel="noopener">
+          {{ url }}
+        </a>
+        <span *ngIf="!result()?.metadata?.proxyUrl">-</span>
+      </p>
     </div>
   </mat-card>
 
