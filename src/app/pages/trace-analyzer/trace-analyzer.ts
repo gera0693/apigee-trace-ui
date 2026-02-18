@@ -1,12 +1,12 @@
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { AnalysisResponse, LegacyViewModel } from '../../models/apigee-trace';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 import { MatCardModule } from '@angular/material/card';
 import { TraceService } from '../../services/trace';
+import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-
 
 @Component({
   selector: 'app-trace-analyzer',
@@ -23,29 +23,77 @@ import { Component } from '@angular/core';
   styleUrls: ['./trace-analyzer.scss']
 })
 export class TraceAnalyzerComponent {
+  loading = signal(false);
+  errorMsg = signal<string | null>(null);
 
-  result: any;
-  loading = false;
+  // Resultado mapeado a la forma “legacy” (la que usaba tu template)
+  result = signal<LegacyViewModel | null>(null);
+  // (Opcional) Reporte crudo de analyzer.py para debug
+  rawReport = signal<string | null>(null);
 
-  displayedColumns: string[] = ['name', 'type', 'status', 'executionTime'];
+  displayedHeaderColumns = ['name', 'value'];
+  displayedStateColumns = ['timestamp', 'from', 'to'];
 
-  constructor(private traceService: TraceService) {}
+  constructor(private svc: TraceService) {}
 
-  onFileSelected(event: any) {
-    const file = event.target.files[0];
-    if (!file) return;
+  onFileSelected(evt: Event) {
+    const input = evt.target as HTMLInputElement;
+    if (!input.files || !input.files.length) return;
 
-    this.loading = true;
+    const file = input.files[0];
+    this.loading.set(true);
+    this.errorMsg.set(null);
+    this.result.set(null);
+    this.rawReport.set(null);
 
-    this.traceService.analyzeTrace(file).subscribe({
-      next: (res) => {
-        this.result = res;
-        this.loading = false;
+    this.svc.analyzeTrace(file).subscribe({
+      next: (data) => {
+        if (data.status === 'error') {
+          this.errorMsg.set(data.message || 'No se pudo analizar el XML.');
+          return;
+        }
+        const legacy = this.mapToLegacyShape(data);
+        this.result.set(legacy);
+        this.rawReport.set(data.report_text || null);
       },
-      error: () => {
-        this.loading = false;
-      }
+      error: (err) => {
+        this.errorMsg.set(err?.message || 'Error inesperado');
+      },
+      complete: () => this.loading.set(false)
     });
   }
-}
 
+  /** Mapea el JSON de analyzer.py a la forma que usaba tu plantilla Angular Material */
+  private mapToLegacyShape(apiData: AnalysisResponse): LegacyViewModel {
+    const req = apiData.request || {};
+    const headersObj = req.headers || {};
+    const headers = Object.keys(headersObj).map((k) => ({ name: k, value: String(headersObj[k]) }));
+
+    // Si luego extendemos analyzer.py para incluir state changes/metadata,
+    // solo actualizamos aquí la asignación real.
+    const legacy: LegacyViewModel = {
+      summary: {
+        totalStateChanges: 0,
+        totalFlowInfoPoints: 0,
+        totalHeaders: headers.length,
+        hasStateTransitions: false
+      },
+      metadata: {
+        organization: '-',
+        environment: '-',
+        api: '-',
+        revision: '-',
+        sessionId: '-',
+        retrieved: '-'
+      },
+      request: {
+        uri: req.uri || 'Unknown',
+        verb: req.method || 'Unknown',
+        headers
+      },
+      stateChanges: []
+    };
+
+    return legacy;
+  }
+}
