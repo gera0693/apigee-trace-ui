@@ -1,76 +1,85 @@
-<mat-toolbar color="primary" class="toolbar">
+<mat-toolbar color="primary" class="toolbar mat-elevation-z4">
   <span class="title">Apigee Trace Analyzer</span>
 </mat-toolbar>
 
 <div class="page">
 
   <!-- Upload Card -->
-  <mat-card class="upload-card">
+  <mat-card class="upload-card mat-elevation-z3">
     <div class="upload-header">
-      <h2>Upload Trace XML</h2>
+      <h2 class="section-title">Upload Trace XML</h2>
       <p>Select an Apigee trace file to analyze execution flow.</p>
     </div>
 
     <div class="upload-area">
       <button mat-raised-button color="primary" (click)="fileInput.click()">
-        Select XML File
+        📄 Select XML File
       </button>
       <input #fileInput type="file" hidden accept=".xml" (change)="onFileSelected($event)" />
 
       <span *ngIf="loading()" class="loading-text">Analyzing trace...</span>
-      <mat-progress-spinner *ngIf="loading()" diameter="40" mode="indeterminate"></mat-progress-spinner>
+      <mat-progress-spinner *ngIf="loading()" diameter="32" mode="indeterminate"></mat-progress-spinner>
     </div>
 
-    <!-- error -->
     <div *ngIf="errorMsg()" class="error">{{ errorMsg() }}</div>
   </mat-card>
 
   <!-- SUMMARY -->
-  <mat-card *ngIf="result()?.summary" class="summary-card">
-    <h3>Trace Summary</h3>
-    <div *ngIf="result()" class="summary-grid">
-      <div *ngIf="result()?.summary" class="summary-item">
-        <span class="value">{{ result()?.summary?.totalStateChanges }}</span>
+  <mat-card *ngIf="result()?.summary" class="summary-card mat-elevation-z2">
+    <h3 class="section-title">Trace Summary</h3>
+
+    <div *ngIf="result() as r" class="summary-grid">
+
+      <div class="summary-item mat-elevation-z1">
+        <span class="value">{{ r.summary.totalStateChanges }}</span>
         <span class="label">State Changes</span>
       </div>
-      <div *ngIf="result()" class="summary-item">
-        <span class="value">{{ result()?.summary?.totalFlowInfoPoints }}</span>
+
+      <div class="summary-item mat-elevation-z1">
+        <span class="value">{{ r.summary.totalFlowInfoPoints }}</span>
         <span class="label">Flow Info Points</span>
       </div>
-      <div *ngIf="result()" class="summary-item">
-        <span class="value">{{ result()?.summary?.totalHeaders }}</span>
+
+      <div class="summary-item mat-elevation-z1">
+        <span class="value">{{ r.summary.totalHeaders }}</span>
         <span class="label">Headers</span>
       </div>
-      <div class="summary-item">
-        <span class="value">{{ result()?.summary?.hasStateTransitions ? 'Yes' : 'No' }}</span>
+
+      <div class="summary-item mat-elevation-z1">
+        <span class="value">{{ r.summary.hasStateTransitions ? 'Yes' : 'No' }}</span>
         <span class="label">Has Transitions</span>
       </div>
+
     </div>
   </mat-card>
 
   <!-- METADATA -->
-  <mat-card *ngIf="result()" class="table-card">
-    <h3>Metadata</h3>
-    <p><strong>Organization:</strong> {{ result()?.metadata?.organization }}</p>
-    <p><strong>Environment:</strong> {{ result()?.metadata?.environment }}</p>
-    <p><strong>API:</strong> {{ result()?.metadata?.api }}</p>
-    <p><strong>Revision:</strong> {{ result()?.metadata?.revision }}</p>
-    <p><strong>Session ID:</strong> {{ result()?.metadata?.sessionId }}</p>
-    <p><strong>Retrieved:</strong> {{ result()?.metadata?.retrieved }}</p>
+  <mat-card *ngIf="result()" class="table-card mat-elevation-z2">
+    <h3 class="section-title">Metadata</h3>
+
+    <div class="metadata-grid">
+      <p><strong>Organization:</strong> {{ result()?.metadata?.organization }}</p>
+      <p><strong>Environment:</strong> {{ result()?.metadata?.environment }}</p>
+      <p><strong>API:</strong> {{ result()?.metadata?.api }}</p>
+      <p><strong>Revision:</strong> {{ result()?.metadata?.revision }}</p>
+      <p><strong>Session ID:</strong> {{ result()?.metadata?.sessionId }}</p>
+      <p><strong>Retrieved:</strong> {{ result()?.metadata?.retrieved }}</p>
+    </div>
   </mat-card>
 
   <!-- REQUEST -->
-  <mat-card *ngIf="result()" class="table-card">
-    <h3>Request Info</h3>
+  <mat-card *ngIf="result()" class="table-card mat-elevation-z2">
+    <h3 class="section-title">Request Info</h3>
     <p><strong>URI:</strong> {{ result()?.request?.uri }}</p>
     <p><strong>Verb:</strong> {{ result()?.request?.verb }}</p>
   </mat-card>
 
-  <!-- HEADERS -->
-  <mat-card *ngIf="result()?.request?.headers?.length" class="table-card">
-    <h3>Request Headers</h3>
+  <!-- HEADERS TABLE -->
+  <mat-card *ngIf="result()?.request?.headers?.length" class="table-card mat-elevation-z2">
+    <h3 class="section-title">Request Headers</h3>
 
-    <table mat-table [dataSource]="result()!.request!.headers" class="mat-elevation-z2 full-width">
+    <table mat-table [dataSource]="result()?.request?.headers ?? []" class="mat-elevation-z1 full-width">
+
       <ng-container matColumnDef="name">
         <th mat-header-cell *matHeaderCellDef>Name</th>
         <td mat-cell *matCellDef="let element">{{ element.name }}</td>
@@ -81,39 +90,44 @@
         <td mat-cell *matCellDef="let element">{{ element.value }}</td>
       </ng-container>
 
-      <tr mat-header-row *matHeaderRowDef="displayedHeaderColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedHeaderColumns;"></tr>
+      <tr mat-header-row *matHeaderRowDef="['name','value']"></tr>
+      <tr mat-row *matRowDef="let row; columns: ['name','value'];"></tr>
+
     </table>
   </mat-card>
 
   <!-- STATE CHANGES -->
-  <mat-card *ngIf="result()?.stateChanges?.length" class="table-card">
-    <h3>State Changes</h3>
+  <mat-card *ngIf="(result()?.stateChanges?.length ?? 0) > 0" class="table-card mat-elevation-z2">
+    <h3 class="section-title">State Changes</h3>
 
-    <table mat-table [dataSource]="result()!.stateChanges" class="mat-elevation-z2 full-width">
+    <table mat-table [dataSource]="result()?.stateChanges ?? []" class="mat-elevation-z1 full-width">
+      <!-- Columna: timestamp -->
       <ng-container matColumnDef="timestamp">
         <th mat-header-cell *matHeaderCellDef>Timestamp</th>
         <td mat-cell *matCellDef="let element">{{ element.timestamp }}</td>
       </ng-container>
 
+      <!-- Columna: from -->
       <ng-container matColumnDef="from">
         <th mat-header-cell *matHeaderCellDef>From</th>
         <td mat-cell *matCellDef="let element">{{ element.from }}</td>
       </ng-container>
 
+      <!-- Columna: to -->
       <ng-container matColumnDef="to">
         <th mat-header-cell *matHeaderCellDef>To</th>
         <td mat-cell *matCellDef="let element">{{ element.to }}</td>
       </ng-container>
 
-      <tr mat-header-row *matHeaderRowDef="displayedStateColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedStateColumns;"></tr>
+      <tr mat-header-row *matHeaderRowDef="['timestamp','from','to']"></tr>
+      <tr mat-row *matRowDef="let row; columns: ['timestamp','from','to'];"></tr>
     </table>
   </mat-card>
 
-  <!-- RAW REPORT (opcional para debug) -->
-  <mat-card *ngIf="rawReport()" class="table-card">
-    <h3>Reporte crudo</h3>
-    <pre class="mono">{{ rawReport() }}</pre>
+  <!-- RAW REPORT -->
+  <mat-card *ngIf="rawReport()" class="table-card mat-elevation-z2">
+    <h3 class="section-title">Raw Report</h3>
+    <pre class="mono report-block">{{ rawReport() }}</pre>
   </mat-card>
+
 </div>
