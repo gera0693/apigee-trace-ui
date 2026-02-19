@@ -78,7 +78,7 @@ export class TraceAnalyzerComponent {
     this.result.set(null);
     this.rawReport.set(null);
 
-    this.svc.analyzeTrace(file).subscribe({
+    this.svc.analyze(file).subscribe({
       next: (data) => {
         if (data.status === 'error') {
           this.errorMsg.set(data.message || 'No se pudo analizar el XML.');
