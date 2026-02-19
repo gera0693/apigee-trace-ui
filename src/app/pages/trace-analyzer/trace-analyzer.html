@@ -1,10 +1,19 @@
 <mat-toolbar color="primary" class="toolbar mat-elevation-z4">
   <span class="title">Apigee Trace Analyzer</span>
+  <span class="spacer"></span>
+
+  <!-- Acciones globales -->
+  <button mat-stroked-button color="accent" (click)="expandAll()">
+    <mat-icon>unfold_more</mat-icon>&nbsp;Expand all
+  </button>
+  <button mat-stroked-button class="ml-8" (click)="collapseAll()">
+    <mat-icon>unfold_less</mat-icon>&nbsp;Collapse all
+  </button>
 </mat-toolbar>
 
 <div class="page">
 
-  <!-- Upload Card -->
+  <!-- Upload Card (sin colapse) -->
   <mat-card class="upload-card mat-elevation-z3">
     <div class="upload-header">
       <h2 class="section-title">Upload Trace XML</h2>
@@ -20,7 +29,7 @@
       <span *ngIf="loading()" class="loading-text">Analyzing trace...</span>
       <mat-progress-spinner *ngIf="loading()" diameter="32" mode="indeterminate"></mat-progress-spinner>
     </div>
-    
+
     <div class="file-row" *ngIf="fileName()">
       <mat-icon color="primary" aria-hidden="true">attach_file</mat-icon>
       <span class="file-name" [matTooltip]="fileName()">{{ fileName() }}</span>
@@ -32,75 +41,92 @@
     <div *ngIf="errorMsg()" class="error">{{ errorMsg() }}</div>
   </mat-card>
 
-  <!-- SUMMARY -->
-  <!-- <mat-card *ngIf="result()?.summary" class="summary-card mat-elevation-z2">
-    <h3 class="section-title">Trace Summary</h3>
 
-    <div *ngIf="result() as r" class="summary-grid">
-
-      <div class="summary-item mat-elevation-z1">
-        <span class="value">{{ r.summary.totalStateChanges }}</span>
-        <span class="label">State Changes</span>
-      </div>
-
-      <div class="summary-item mat-elevation-z1">
-        <span class="value">{{ r.summary.totalFlowInfoPoints }}</span>
-        <span class="label">Flow Info Points</span>
-      </div>
-
-      <div class="summary-item mat-elevation-z1">
-        <span class="value">{{ r.summary.totalHeaders }}</span>
-        <span class="label">Headers</span>
-      </div>
-
-      <div class="summary-item mat-elevation-z1">
-        <span class="value">{{ r.summary.hasStateTransitions ? 'Yes' : 'No' }}</span>
-        <span class="label">Has Transitions</span>
-      </div>
-
-    </div>
-  </mat-card> -->
+  <!-- =============== PANELS =============== -->
 
   <!-- METADATA -->
-  <mat-card *ngIf="result()" class="table-card mat-elevation-z2">
-    <h3 class="section-title">Metadata</h3>
+  <mat-expansion-panel
+    *ngIf="result()"
+    [expanded]="metaOpen()"
+    (opened)="metaOpen.set(true)"
+    (closed)="metaOpen.set(false)"
+    class="panel-as-card mat-elevation-z2"
+  >
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        <mat-icon class="mr-6">info</mat-icon>
+        Metadata
+      </mat-panel-title>
+      <mat-panel-description>
+        Organization, environment, proxy, review, etc.
+      </mat-panel-description>
+    </mat-expansion-panel-header>
 
     <div class="metadata-grid">
-      
-<p><strong>Organization:</strong> {{ result()?.metadata?.organization }}</p>
+      <p><strong>Organization:</strong> {{ result()?.metadata?.organization }}</p>
       <p><strong>Environment:</strong> {{ result()?.metadata?.environment }}</p>
       <p><strong>API:</strong> {{ result()?.metadata?.api }}</p>
       <p><strong>Revision:</strong> {{ result()?.metadata?.revision }}</p>
       <p><strong>Session ID:</strong> {{ result()?.metadata?.sessionId }}</p>
       <p><strong>Retrieved:</strong> {{ result()?.metadata?.retrieved }}</p>
       <p><strong>Virtual host:</strong> {{ result()?.metadata?.virtualhost }}</p>
-      <p class="proxy-url"><strong>Proxy URL:</strong> 
+      <p class="proxy-url">
+        <strong>Proxy URL:</strong>
         <a *ngIf="result()?.metadata?.proxyUrl as url" [href]="url" target="_blank" rel="noopener">
           {{ url }}
         </a>
         <span *ngIf="!result()?.metadata?.proxyUrl">-</span>
       </p>
     </div>
-  </mat-card>
+  </mat-expansion-panel>
+
 
   <!-- REQUEST -->
-  <mat-card *ngIf="result()" class="table-card mat-elevation-z2">
-    <h3 class="section-title">Request Info</h3>
+  <mat-expansion-panel
+    *ngIf="result()"
+    [expanded]="reqOpen()"
+    (opened)="reqOpen.set(true)"
+    (closed)="reqOpen.set(false)"
+    class="panel-as-card mat-elevation-z2"
+  >
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        <mat-icon class="mr-6">http</mat-icon>
+        Request Info
+      </mat-panel-title>
+      <mat-panel-description>
+        Request method and URI
+      </mat-panel-description>
+    </mat-expansion-panel-header>
+
     <p><strong>URI:</strong> {{ result()?.request?.uri }}</p>
     <p><strong>Verb:</strong> {{ result()?.request?.verb }}</p>
-  </mat-card>
+  </mat-expansion-panel>
 
-  <!-- HEADERS TABLE -->
-  <mat-card *ngIf="result()?.request?.headers?.length" class="table-card mat-elevation-z2">
-    <h3 class="section-title">Request Headers</h3>
+
+  <!-- HEADERS -->
+  <mat-expansion-panel
+    *ngIf="(result()?.request?.headers?.length ?? 0) > 0"
+    [expanded]="hdrsOpen()"
+    (opened)="hdrsOpen.set(true)"
+    (closed)="hdrsOpen.set(false)"
+    class="panel-as-card mat-elevation-z2"
+  >
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        <mat-icon class="mr-6">dataset</mat-icon>
+        Request Headers
+      </mat-panel-title>
+      <mat-panel-description>
+        {{ result()?.request?.headers?.length }} headers
+      </mat-panel-description>
+    </mat-expansion-panel-header>
 
     <table mat-table [dataSource]="result()?.request?.headers ?? []" class="mat-elevation-z1 full-width">
-
       <ng-container matColumnDef="name">
         <th mat-header-cell *matHeaderCellDef>Name</th>
         <td mat-cell *matCellDef="let element">{{ element.name }}</td>
       </ng-container>
-
       <ng-container matColumnDef="value">
         <th mat-header-cell *matHeaderCellDef>Value</th>
         <td mat-cell *matCellDef="let element">{{ element.value }}</td>
@@ -108,28 +134,37 @@
 
       <tr mat-header-row *matHeaderRowDef="['name','value']"></tr>
       <tr mat-row *matRowDef="let row; columns: ['name','value'];"></tr>
-
     </table>
-  </mat-card>
+  </mat-expansion-panel>
+
 
   <!-- STATE CHANGES -->
-  <mat-card *ngIf="(result()?.stateChanges?.length ?? 0) > 0" class="table-card mat-elevation-z2">
-    <h3 class="section-title">State Changes</h3>
+  <mat-expansion-panel
+    *ngIf="(result()?.stateChanges?.length ?? 0) > 0"
+    [expanded]="statesOpen()"
+    (opened)="statesOpen.set(true)"
+    (closed)="statesOpen.set(false)"
+    class="panel-as-card mat-elevation-z2"
+  >
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        <mat-icon class="mr-6">timeline</mat-icon>
+        State Changes
+      </mat-panel-title>
+      <mat-panel-description>
+        Transiciones de estado de la traza
+      </mat-panel-description>
+    </mat-expansion-panel-header>
 
     <table mat-table [dataSource]="result()?.stateChanges ?? []" class="mat-elevation-z1 full-width">
-      <!-- Columna: timestamp -->
       <ng-container matColumnDef="timestamp">
         <th mat-header-cell *matHeaderCellDef>Timestamp</th>
         <td mat-cell *matCellDef="let element">{{ element.timestamp }}</td>
       </ng-container>
-
-      <!-- Columna: from -->
       <ng-container matColumnDef="from">
         <th mat-header-cell *matHeaderCellDef>From</th>
         <td mat-cell *matCellDef="let element">{{ element.from }}</td>
       </ng-container>
-
-      <!-- Columna: to -->
       <ng-container matColumnDef="to">
         <th mat-header-cell *matHeaderCellDef>To</th>
         <td mat-cell *matCellDef="let element">{{ element.to }}</td>
@@ -138,12 +173,28 @@
       <tr mat-header-row *matHeaderRowDef="['timestamp','from','to']"></tr>
       <tr mat-row *matRowDef="let row; columns: ['timestamp','from','to'];"></tr>
     </table>
-  </mat-card>
+  </mat-expansion-panel>
+
 
   <!-- RAW REPORT -->
-  <mat-card *ngIf="rawReport()" class="table-card mat-elevation-z2">
-    <h3 class="section-title">Raw Report</h3>
+  <mat-expansion-panel
+    *ngIf="rawReport()"
+    [expanded]="rawOpen()"
+    (opened)="rawOpen.set(true)"
+    (closed)="rawOpen.set(false)"
+    class="panel-as-card mat-elevation-z2"
+  >
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        <mat-icon class="mr-6">description</mat-icon>
+        Raw Report
+      </mat-panel-title>
+      <mat-panel-description>
+        Full analysis text
+      </mat-panel-description>
+    </mat-expansion-panel-header>
+
     <pre class="mono report-block">{{ rawReport() }}</pre>
-  </mat-card>
+  </mat-expansion-panel>
 
 </div>

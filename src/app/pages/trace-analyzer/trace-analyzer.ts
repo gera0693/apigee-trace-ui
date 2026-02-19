@@ -1,6 +1,7 @@
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AnalysisResponse, LegacyViewModel } from '../../models/apigee-trace';
 import { Component, ElementRef, signal, ViewChild } from '@angular/core';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
@@ -21,7 +22,8 @@ import { CommonModule } from '@angular/common';
     MatTableModule,
     MatProgressSpinnerModule,
     MatIconModule,
-    MatTooltipModule
+    MatTooltipModule,  
+    MatExpansionModule
   ],
   templateUrl: './trace-analyzer.html',
   styleUrls: ['./trace-analyzer.scss']
@@ -36,6 +38,29 @@ export class TraceAnalyzerComponent {
   rawReport = signal<string | null>(null);
   fileName = signal<string | null>(null);
   @ViewChild('fileInput') fileInputRef!: ElementRef<HTMLInputElement>;
+
+  // Estados de expansión (por defecto true)
+  metaOpen   = signal(true);
+  reqOpen    = signal(true);
+  hdrsOpen   = signal(true);
+  statesOpen = signal(true);
+  rawOpen    = signal(false); // raw report puede empezar cerrado
+
+  expandAll() {
+    this.metaOpen.set(true);
+    this.reqOpen.set(true);
+    this.hdrsOpen.set(true);
+    this.statesOpen.set(true);
+    this.rawOpen.set(true);
+  }
+
+  collapseAll() {
+    this.metaOpen.set(false);
+    this.reqOpen.set(false);
+    this.hdrsOpen.set(false);
+    this.statesOpen.set(false);
+    this.rawOpen.set(false);
+  }
 
   displayedHeaderColumns = ['name', 'value'];
   displayedStateColumns = ['timestamp', 'from', 'to'];
