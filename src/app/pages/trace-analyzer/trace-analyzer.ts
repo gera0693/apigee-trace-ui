@@ -1,11 +1,13 @@
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AnalysisResponse, LegacyViewModel } from '../../models/apigee-trace';
+import { Component, ElementRef, signal, ViewChild } from '@angular/core';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
+import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { TraceService } from '../../services/trace';
-import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -17,7 +19,9 @@ import { CommonModule } from '@angular/common';
     MatCardModule,
     MatButtonModule,
     MatTableModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatIconModule,
+    MatTooltipModule
   ],
   templateUrl: './trace-analyzer.html',
   styleUrls: ['./trace-analyzer.scss']
@@ -30,6 +34,8 @@ export class TraceAnalyzerComponent {
   result = signal<LegacyViewModel | null>(null);
   // (Opcional) Reporte crudo de analyzer.py para debug
   rawReport = signal<string | null>(null);
+  fileName = signal<string | null>(null);
+  @ViewChild('fileInput') fileInputRef!: ElementRef<HTMLInputElement>;
 
   displayedHeaderColumns = ['name', 'value'];
   displayedStateColumns = ['timestamp', 'from', 'to'];
@@ -41,6 +47,7 @@ export class TraceAnalyzerComponent {
     if (!input.files || !input.files.length) return;
 
     const file = input.files[0];
+    this.fileName.set(file.name);
     this.loading.set(true);
     this.errorMsg.set(null);
     this.result.set(null);
@@ -61,6 +68,16 @@ export class TraceAnalyzerComponent {
       },
       complete: () => this.loading.set(false)
     });
+  }
+  
+  clearFile() {
+      this.fileName.set(null);
+      if (this.fileInputRef?.nativeElement) {
+        this.fileInputRef.nativeElement.value = '';
+      }
+      this.result.set(null);
+      this.rawReport.set(null);
+      this.errorMsg.set(null);
   }
 
   /** Mapea el JSON de analyzer.py a la forma que usaba tu plantilla Angular Material */
