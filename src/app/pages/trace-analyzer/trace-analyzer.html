@@ -46,7 +46,7 @@
 
   <!-- METADATA -->
   <mat-expansion-panel
-    *ngIf="result()"
+    *ngIf="!isPcap() && result()" 
     [expanded]="metaOpen()"
     (opened)="metaOpen.set(true)"
     (closed)="metaOpen.set(false)"
@@ -83,7 +83,7 @@
 
   <!-- REQUEST -->
   <mat-expansion-panel
-    *ngIf="result()"
+    *ngIf="!isPcap() && result()" 
     [expanded]="reqOpen()"
     (opened)="reqOpen.set(true)"
     (closed)="reqOpen.set(false)"
@@ -106,7 +106,7 @@
 
   <!-- HEADERS -->
   <mat-expansion-panel
-    *ngIf="(result()?.request?.headers?.length ?? 0) > 0"
+    *ngIf="!isPcap() && (result()?.request?.headers?.length ?? 0) > 0" 
     [expanded]="hdrsOpen()"
     (opened)="hdrsOpen.set(true)"
     (closed)="hdrsOpen.set(false)"
@@ -140,7 +140,7 @@
 
   <!-- STATE CHANGES -->
   <mat-expansion-panel
-    *ngIf="(result()?.stateChanges?.length ?? 0) > 0"
+    *ngIf="!isPcap() && (result()?.stateChanges?.length ?? 0) > 0" 
     [expanded]="statesOpen()"
     (opened)="statesOpen.set(true)"
     (closed)="statesOpen.set(false)"
@@ -178,7 +178,7 @@
 
   <!-- RAW REPORT -->
   <mat-expansion-panel
-    *ngIf="rawReport()"
+    *ngIf="rawReport()" 
     [expanded]="rawOpen()"
     (opened)="rawOpen.set(true)"
     (closed)="rawOpen.set(false)"

@@ -24,7 +24,6 @@ export class TraceService {
     form.append('file', file, file.name);
 
     const isPCAP = /\.pcap$/i.test(file.name);
-    console.log('isPCAP', isPCAP);
     const endpoint = isPCAP ? 'analyze-pcap' : 'analyze-trace'; // backend FastAPI
     const url = `${this.baseUrl}/${endpoint}`;
 

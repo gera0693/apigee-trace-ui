@@ -46,6 +46,8 @@ export class TraceAnalyzerComponent {
   statesOpen = signal(true);
   rawOpen    = signal(false); // raw report puede empezar cerrado
 
+  isPcap = signal(false);
+
   expandAll() {
     this.metaOpen.set(true);
     this.reqOpen.set(true);
@@ -72,6 +74,9 @@ export class TraceAnalyzerComponent {
     if (!input.files || !input.files.length) return;
 
     const file = input.files[0];
+    const isPcapFile = file.name.toLowerCase().endsWith('.pcap');
+    this.isPcap.set(isPcapFile);
+
     this.fileName.set(file.name);
     this.loading.set(true);
     this.errorMsg.set(null);
@@ -81,12 +86,20 @@ export class TraceAnalyzerComponent {
     this.svc.analyze(file).subscribe({
       next: (data) => {
         if (data.status === 'error') {
-          this.errorMsg.set(data.message || 'No se pudo analizar el XML.');
+          this.errorMsg.set(data.message || 'No se pudo analizar el archivo.');
           return;
         }
+
         const legacy = this.mapToLegacyShape(data);
         this.result.set(legacy);
         this.rawReport.set(data.report_text || null);
+
+        if (isPcapFile) {
+          this.collapseAll();
+          this.rawOpen.set(true);
+        } else {
+          this.expandAll();
+        }
       },
       error: (err) => {
         this.errorMsg.set(err?.message || 'Error inesperado');
@@ -96,13 +109,18 @@ export class TraceAnalyzerComponent {
   }
   
   clearFile() {
-      this.fileName.set(null);
-      if (this.fileInputRef?.nativeElement) {
-        this.fileInputRef.nativeElement.value = '';
-      }
-      this.result.set(null);
-      this.rawReport.set(null);
-      this.errorMsg.set(null);
+    this.fileName.set(null);
+    this.isPcap.set(false);
+
+    if (this.fileInputRef?.nativeElement) {
+      this.fileInputRef.nativeElement.value = '';
+    }
+
+    this.result.set(null);
+    this.rawReport.set(null);
+    this.errorMsg.set(null);
+
+    this.expandAll(); // restaurar comportamiento normal
   }
 
   /** Mapea el JSON de analyzer.py a la forma que usaba tu plantilla Angular Material */
