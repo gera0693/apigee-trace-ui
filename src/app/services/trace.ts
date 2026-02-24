@@ -10,7 +10,7 @@ import { Injectable } from '@angular/core';
 })
 export class TraceService {
 
-  private baseUrl = environment.apiBaseUrl ?? 'http://127.0.0.1:8000';
+  private baseUrl = environment.apiBaseUrl ?? 'https://apigee-trace-api.onrender.com';
 
   constructor(private http: HttpClient) {}
 
