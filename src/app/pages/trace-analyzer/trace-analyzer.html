@@ -201,7 +201,7 @@
       <p><strong>Handshakes OK:</strong> {{ pcapPanel()?.handshakesComplete ?? '-' }}</p>
       <p><strong>Handshakes failed:</strong> {{ pcapPanel()?.handshakesFailed ?? '-' }}</p>
       <p><strong>TLS versions:</strong> {{ (pcapPanel()?.tlsVersions || []).join(', ') || '-' }}</p>
-      <p class="proxy-url">
+      <p class="proxy-url" style="width: max-content;">
         <strong>Cipher suites:</strong>
         <span class="ml-4">{{ (pcapPanel()?.cipherSuites || []).join(', ') || '-' }}</span>
       </p>
