@@ -1,5 +1,5 @@
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { AnalysisResponse, LegacyViewModel } from '../../models/apigee-trace';
+import { AnalysisResponse, LegacyViewModel, PcapPanelData } from '../../models/apigee-trace';
 import { Component, ElementRef, signal, ViewChild } from '@angular/core';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -47,6 +47,10 @@ export class TraceAnalyzerComponent {
   rawOpen    = signal(false); // raw report puede empezar cerrado
 
   isPcap = signal(false);
+  
+  pcapOpen = signal(true);
+  pcapPanel = signal<PcapPanelData | null>(null);
+
 
   expandAll() {
     this.metaOpen.set(true);
@@ -54,6 +58,7 @@ export class TraceAnalyzerComponent {
     this.hdrsOpen.set(true);
     this.statesOpen.set(true);
     this.rawOpen.set(true);
+    this.pcapOpen.set(true);
   }
 
   collapseAll() {
@@ -62,6 +67,7 @@ export class TraceAnalyzerComponent {
     this.hdrsOpen.set(false);
     this.statesOpen.set(false);
     this.rawOpen.set(false);
+    this.pcapOpen.set(false);
   }
 
   displayedHeaderColumns = ['name', 'value'];
@@ -82,6 +88,7 @@ export class TraceAnalyzerComponent {
     this.errorMsg.set(null);
     this.result.set(null);
     this.rawReport.set(null);
+    this.pcapPanel.set(null);
 
     this.svc.analyze(file).subscribe({
       next: (data) => {
@@ -95,8 +102,12 @@ export class TraceAnalyzerComponent {
         this.rawReport.set(data.report_text || null);
 
         if (isPcapFile) {
+          this.pcapPanel.set(this.mapToPcapPanel(data));
           this.collapseAll();
+          
+          this.pcapOpen.set(true);
           this.rawOpen.set(true);
+
         } else {
           this.expandAll();
         }
@@ -118,6 +129,7 @@ export class TraceAnalyzerComponent {
 
     this.result.set(null);
     this.rawReport.set(null);
+    this.pcapPanel.set(null);
     this.errorMsg.set(null);
 
     this.expandAll(); // restaurar comportamiento normal
@@ -160,5 +172,105 @@ export class TraceAnalyzerComponent {
     };
 
     return legacy;
+  }
+
+  
+private mapToPcapPanel(apiData: AnalysisResponse): PcapPanelData {
+    const issues = (apiData.issues ?? []) as any[];
+    // 1) Conteos por severidad y por tipo
+    const sevMap = new Map<string, number>();
+    const typeMap = new Map<string, number>();
+    const streamMap = new Map<string, number>();
+    const tlsFatalAlerts: { timestamp?: string; description: string }[] = [];
+
+    for (const it of issues) {
+      if (it?.severity) sevMap.set(it.severity, (sevMap.get(it.severity) || 0) + 1);
+      if (it?.type) typeMap.set(it.type, (typeMap.get(it.type) || 0) + 1);
+      if (it?.stream) streamMap.set(it.stream, (streamMap.get(it.stream) || 0) + 1);
+
+      // Captura alertas TLS con timestamp si viene en la descripción
+      if (it?.type === 'TLS_FATAL_ALERT' && typeof it?.description === 'string') {
+        const m = it.description.match(/\[(.*?)\]\s*Fatal TLS alert:\s*([^ ]+)/i);
+        tlsFatalAlerts.push({
+          timestamp: m?.[1],
+          description: it.description
+        });
+      }
+    }
+
+    const issuesBySeverity = Array.from(sevMap.entries()).map(([severity, count]) => ({ severity, count }))
+      .sort((a, b) => b.count - a.count);
+    const issuesByType = Array.from(typeMap.entries()).map(([type, count]) => ({ type, count }))
+      .sort((a, b) => b.count - a.count);
+    const topStreams = Array.from(streamMap.entries()).map(([stream, count]) => ({ stream, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    // 2) Extrae métricas y filtros desde report_text (si existen)
+    const rpt = apiData.report_text || '';
+    const getNum = (re: RegExp) => {
+      const m = rpt.match(re);
+      return m ? Number(m[1]) : null;
+    };
+
+    const packets = getNum(/Total Packets Analyzed:\s*(\d+)/i);
+    const tcpStreams = getNum(/TCP Streams:\s*(\d+)/i);
+    const handshakesComplete = getNum(/Complete Handshakes:\s*(\d+)/i);
+    const handshakesFailed = getNum(/Failed Handshakes:\s*(\d+)/i);
+    const tlsConnections = getNum(/TLS Connections Found:\s*(\d+)/i);
+
+    // TLS versions y cipher suites (listas débiles pero suficientes)
+    const versions: string[] = [];
+    const versBlock = rpt.match(/TLS Versions Detected:\s*([\s\S]*?)\n\n/);
+    if (versBlock) {
+      versBlock[1].split('\n').forEach(line => {
+        const m = line.match(/-\s*(.+)\s*$/);
+        if (m) versions.push(m[1].trim());
+      });
+    }
+
+    const cipherSuites: string[] = [];
+    const csBlock = rpt.match(/Negotiated Cipher Suites:\s*([\s\S]*?)\n(?:Handshake Summary:|\n\n)/);
+    if (csBlock) {
+      csBlock[1].split('\n').forEach(line => {
+        const m = line.match(/-\s*(\S+)/);
+        if (m) cipherSuites.push(m[1].trim());
+      });
+    }
+
+    // Filtros recomendados (título: línea con ":", filtro: siguientes líneas no vacías hasta un separador)
+    const filters: { title: string; filter: string }[] = [];
+    const filtSection = rpt.match(/RECOMMENDED WIRESHARK FILTERS:[\s\S]*?(?=ISSUES DETECTED|$)/i);
+    if (filtSection) {
+      const lines = filtSection[0].split('\n').map(s => s.trim()).filter(s => s.length);
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].endsWith(':') && !/^RECOMMENDED WIRESHARK FILTERS/i.test(lines[i])) {
+          const title = lines[i].replace(/:$/, '');
+          let j = i + 1;
+          const collected: string[] = [];
+          while (j < lines.length && !lines[j].endsWith(':')) {
+            // Evita duplicar encabezados; recoge líneas que parezcan filtros
+            collected.push(lines[j].replace(/\\+$/g, '').trim());
+            j++;
+          }
+          if (collected.length) {
+            filters.push({ title, filter: collected.join('\n') });
+          }
+        }
+      }
+    }
+
+    return {
+      packets, tcpStreams, handshakesComplete, handshakesFailed, tlsConnections,
+      tlsVersions: versions,
+      cipherSuites,
+      issuesTotal: issues.length,
+      issuesBySeverity,
+      issuesByType,
+      topStreams,
+      tlsFatalAlerts,
+      filters,
+      raw: apiData.report_text || null
+    };
   }
 }

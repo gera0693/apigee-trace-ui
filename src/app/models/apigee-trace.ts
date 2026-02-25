@@ -79,3 +79,30 @@ export interface LegacyViewModel {
   };
   stateChanges: Array<{ timestamp: string; from: string; to: string }>;
 }
+
+
+export interface PcapPanelData {
+  // Métricas extraídas del report_text (si están presentes)
+  packets?: number | null;
+  tcpStreams?: number | null;
+  handshakesComplete?: number | null;
+  handshakesFailed?: number | null;
+  tlsConnections?: number | null;
+  tlsVersions?: string[];
+  cipherSuites?: string[];
+
+  // Issues
+  issuesTotal: number;
+  issuesBySeverity: { severity: string; count: number }[];
+  issuesByType: { type: string; count: number }[];
+  topStreams: { stream: string; count: number }[];
+
+  // TLS alertas (tomadas de issues TLS_FATAL_ALERT con timestamp cuando exista)
+  tlsFatalAlerts: { timestamp?: string; description: string }[];
+
+  // Filtros sugeridos (extraídos del bloque de report_text)
+  filters: { title: string; filter: string }[];
+
+  // Crudo por si se quiere mostrar o depurar
+  raw: string | null;
+}
