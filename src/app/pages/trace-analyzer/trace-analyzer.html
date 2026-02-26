@@ -80,6 +80,72 @@
     </div>
   </mat-expansion-panel>
 
+  <mat-expansion-panel
+    *ngIf="!isPcap() && result()?.tls"
+    [expanded]="tlsOpen()"
+    (opened)="tlsOpen.set(true)"
+    (closed)="tlsOpen.set(false)"
+    class="panel-as-card mat-elevation-z2"
+  >
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        <mat-icon class="mr-6">verified_user</mat-icon>
+        TLS & Certificates
+      </mat-panel-title>
+      <mat-panel-description>
+        Inbound VHost, handshake to the target, and certificate data (if available)
+      </mat-panel-description>
+    </mat-expansion-panel-header>
+
+    <!-- Inbound -->
+    <h4>Inbound (Virtual Host)</h4>
+    <div class="metadata-grid">
+      <p><strong>Virtual host:</strong> {{ result()?.tls?.inbound?.virtualhost ?? '-' }}</p>
+      <p><strong>SSL enabled:</strong> {{ result()?.tls?.inbound?.sslEnabled ?? '-' }}</p>
+      <p><strong>Port:</strong> {{ result()?.tls?.inbound?.port ?? '-' }}</p>
+      <p class="proxy-url"><strong>Aliases:</strong> {{ result()?.tls?.inbound?.aliases ?? '-' }}</p>
+    </div>
+
+    <!-- Outbound -->
+    <h4 class="mt-16">Outbound (Target)</h4>
+    <div class="metadata-grid">
+      <p><strong>Handshake:</strong> {{ result()?.tls?.outbound?.handshakeStatus ?? '-' }}</p>
+      <p><strong>Handshake (ms):</strong> {{ result()?.tls?.outbound?.handshakeTimeMs ?? '-' }}</p>
+      <p><strong>TLS enabled:</strong> {{ result()?.tls?.outbound?.tlsEnabled ?? '-' }}</p>
+    </div>
+
+    <!-- Config del servicio / mTLS hacia backend -->
+    <h4 class="mt-16">Service config (XML/SOAPResult)</h4>
+    <div class="metadata-grid">
+      <p><strong>Destination:</strong> {{ result()?.tls?.serviceConfig?.destination ?? '-' }}</p>
+      <p><strong>SSL enabled:</strong> {{ result()?.tls?.serviceConfig?.sslenabled ?? '-' }}</p>
+      <p><strong>mTLS to the target:</strong> {{ result()?.tls?.serviceConfig?.clientauthenabled ?? '-' }}</p>
+      <p><strong>Keystore:</strong> {{ result()?.tls?.serviceConfig?.keystore ?? '-' }}</p>
+      <p><strong>Key alias:</strong> {{ result()?.tls?.serviceConfig?.keyalias ?? '-' }}</p>
+      <p><strong>Truststore:</strong> {{ result()?.tls?.serviceConfig?.truststore ?? '-' }}</p>
+      <p><strong>Hostname:</strong> {{ result()?.tls?.serviceConfig?.hostname ?? '-' }}</p>
+    </div>
+
+    <!-- Certificado de cliente -->
+    <h4 class="mt-16">Client certificate</h4>
+    <div class="metadata-grid">
+      <p><strong>Is there a raw certificate?</strong> {{ result()?.tls?.clientCert?.hasRawCert ?? false }}</p>
+      <p><strong>Thumbprint (WAF):</strong> {{ result()?.tls?.clientCert?.thumbprintHeader ?? '-' }}</p>
+      <p><strong>Serial:</strong> {{ result()?.tls?.clientCert?.serial ?? '-' }}</p>
+      <p><strong>Protocol/Cipher:</strong> {{ (result()?.tls?.clientCert?.protocol ?? '-') + ' / ' + (result()?.tls?.clientCert?.cipher ?? '-') }}</p>
+      <p class="proxy-url" style="width:max-content;"><strong>Fingerprint:</strong> {{ result()?.tls?.clientCert?.fingerprint ?? '-' }}</p>
+      <p><strong>Verify:</strong> {{ result()?.tls?.clientCert?.verify ?? '-' }}</p>
+      <p><strong>Validity (to / remaining):</strong> {{ (result()?.tls?.clientCert?.validTo ?? '-') + ' / ' + (result()?.tls?.clientCert?.validRemain ?? '-') }}</p>
+      <p><strong>Curves / SNI:</strong> {{ (result()?.tls?.clientCert?.curves ?? '-') + ' / ' + (result()?.tls?.clientCert?.serverName ?? '-') }}</p>
+    </div>
+
+    <div *ngIf="result()?.tls?.clientCert?.pem" class="mt-16">
+      <button mat-stroked-button color="primary" (click)="downloadClientPem()">
+        <mat-icon>download</mat-icon> Download PEM
+      </button>
+      <pre class="mono report-block">{{ result()?.tls?.clientCert?.pem }}</pre>
+    </div>
+  </mat-expansion-panel>
 
   <!-- REQUEST -->
   <mat-expansion-panel

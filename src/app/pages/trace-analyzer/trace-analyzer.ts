@@ -50,6 +50,7 @@ export class TraceAnalyzerComponent {
   
   pcapOpen = signal(true);
   pcapPanel = signal<PcapPanelData | null>(null);
+  tlsOpen = signal(true);
 
 
   expandAll() {
@@ -59,6 +60,7 @@ export class TraceAnalyzerComponent {
     this.statesOpen.set(true);
     this.rawOpen.set(true);
     this.pcapOpen.set(true);
+    this.tlsOpen.set(true);
   }
 
   collapseAll() {
@@ -68,6 +70,7 @@ export class TraceAnalyzerComponent {
     this.statesOpen.set(false);
     this.rawOpen.set(false);
     this.pcapOpen.set(false);
+    this.tlsOpen.set(false);
   }
 
   displayedHeaderColumns = ['name', 'value'];
@@ -168,12 +171,29 @@ export class TraceAnalyzerComponent {
         verb: req.method || 'Unknown',
         headers
       },
-      stateChanges: []
+      stateChanges: [],   
+      tls: apiData.tls || {
+        inbound: { virtualhost: null, sslEnabled: null },
+        outbound: { handshakeStatus: null, handshakeTimeMs: null, tlsEnabled: null },
+        clientCert: { hasRawCert: false },
+        serviceConfig: {}
+      }
     };
 
     return legacy;
   }
 
+  
+downloadClientPem() {
+  const pem = this.result()?.tls?.clientCert?.pem;
+  if (!pem) return;
+  const blob = new Blob([pem], { type: 'application/x-pem-file' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'client-certificate.pem';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
   
 private mapToPcapPanel(apiData: AnalysisResponse): PcapPanelData {
     const issues = (apiData.issues ?? []) as any[];

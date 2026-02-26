@@ -2,6 +2,7 @@
 export interface AnalysisResponse {
   status?: 'ok' | 'error';
   message?: string;
+  tls?: TlsInfo;
 
   request?: {
     method?: string;
@@ -78,6 +79,7 @@ export interface LegacyViewModel {
     headers: Array<{ name: string; value: string }>;
   };
   stateChanges: Array<{ timestamp: string; from: string; to: string }>;
+  tls?: TlsInfo;
 }
 
 
@@ -106,3 +108,51 @@ export interface PcapPanelData {
   // Crudo por si se quiere mostrar o depurar
   raw: string | null;
 }
+
+export interface TlsInbound {
+  virtualhost: string | null;
+  sslEnabled: boolean | null;
+  port?: string | null;
+  aliases?: string | null;
+}
+
+export interface TlsOutbound {
+  handshakeStatus: string | null;
+  handshakeTimeMs: number | null;
+  tlsEnabled: boolean | null;
+}
+
+export interface TlsClientCert {
+  hasRawCert: boolean;
+  rawCertBase64?: string | null;
+  pem?: string | null;
+  sha256?: string | null;
+  thumbprintHeader?: string | null;
+  serial?: string | null;
+  protocol?: string | null;
+  cipher?: string | null;
+  fingerprint?: string | null;
+  verify?: string | null;
+  validTo?: string | null;
+  validRemain?: string | null;
+  curves?: string | null;
+  serverName?: string | null;
+}
+
+export interface TlsServiceConfig {
+  sslenabled?: boolean | null;
+  clientauthenabled?: boolean | null;
+  keystore?: string | null;
+  keyalias?: string | null;
+  truststore?: string | null;
+  hostname?: string | null;
+  destination?: string | null;
+}
+
+export interface TlsInfo {
+  inbound: TlsInbound;
+  outbound: TlsOutbound;
+  clientCert: TlsClientCert;
+  serviceConfig: TlsServiceConfig;
+}
+
